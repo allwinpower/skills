@@ -1,0 +1,4 @@
+interface:
+  display_name: "Allwin Localhost SSH Access"
+  short_description: "Tunnel private localhost services over SSH"
+  default_prompt: "Use $allwin-localhost-ssh-access to expose a remote Docker service only through an SSH tunnel."

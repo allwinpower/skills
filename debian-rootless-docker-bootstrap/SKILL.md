@@ -11,9 +11,9 @@ Use this skill for Debian 13 `trixie` hosts that should end with exactly one SSH
 
 Before changing a host, read `references/operations.md`. Keep the current bootstrap SSH session open until `admin` login, sudo, and rootless Docker are verified from a second session.
 
-If local SSH config, host aliases, key loading, or agent forwarding need setup before the bootstrap, use `$local-ssh-setup`. Do not invent persistent local SSH aliases inside this skill.
+If local SSH config, host aliases, key loading, or agent forwarding need setup before the bootstrap, use `$local-ssh-setup`. Do not invent persistent local SSH aliases inside this skill. This skill owns the remote host bootstrap and server-side sudo/Docker model only.
 
-For Allwin, Tony, Lifto, or LocalEnhance work, also use `$allwin-project-skills`. If this skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update PR is opened or the exact PR blocker is reported.
+For Allwin, Tony, Lifto, or LocalEnhance work, also use `$allwin-project-skills`. Before using or modifying this skill, check the canonical repo for updates and sync the local installed copy when git is authorized. If this skill is incomplete, wrong, ambiguous, environment-incompatible, or a reusable improvement is learned, the task is not complete until a skill-update PR is opened or the exact blocker is reported.
 
 The script default-installs these admin SSH keys on every host:
 

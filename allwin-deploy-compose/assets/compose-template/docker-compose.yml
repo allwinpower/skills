@@ -1,0 +1,34 @@
+name: ${PROJECT}
+
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      APP_HOST: ${APP_HOST:-0.0.0.0}
+      APP_PORT: ${APP_PORT:-3000}
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL is required}
+      APP_SECRET_FILE: /run/secrets/app_secret
+    ports:
+      - "${APP_BIND_ADDR:-127.0.0.1}:${APP_PORT:-3000}:${APP_PORT:-3000}"
+    volumes:
+      - app-data:/data
+    secrets:
+      - source: app_secret
+        target: app_secret
+    networks:
+      - public-net
+
+volumes:
+  app-data:
+
+secrets:
+  app_secret:
+    file: ${APP_SECRET_FILE_HOST:?APP_SECRET_FILE_HOST is required}
+
+networks:
+  public-net:
+    external: true
+    name: ${PUBLIC_NETWORK:?PUBLIC_NETWORK is required}

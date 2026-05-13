@@ -11,7 +11,7 @@ Use this skill when local SSH behavior is part of the task: adding or reviewing 
 
 Before editing `~/.ssh/config`, read `references/operations.md`. Inspect the current config with `ssh -G HOST` and confirm the intended alias with the user unless the alias was explicitly provided.
 
-For Allwin, Tony, Lifto, or LocalEnhance work, also use `$allwin-project-skills`. If this skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update PR is opened or the exact PR blocker is reported.
+For Allwin, Tony, Lifto, or LocalEnhance work, also use `$allwin-project-skills`. Before using or modifying this skill, check the canonical repo for updates and sync the local installed copy when git is authorized. If this skill is incomplete, wrong, ambiguous, environment-incompatible, or a reusable improvement is learned, the task is not complete until a skill-update PR is opened or the exact blocker is reported.
 
 ## Non-Negotiables
 
