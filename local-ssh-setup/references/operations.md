@@ -10,7 +10,7 @@ ssh -G HOST | awk '/^(user|hostname|identityfile|identityagent|identitiesonly|fo
 ```
 
 2. Confirm the persistent alias if the user did not explicitly provide one. If no alias is confirmed, use direct commands such as `ssh -A admin@HOST`.
-3. Prefer adding a host-specific block before `Host *`, not changing global defaults.
+3. Prefer adding a host-specific block before `Host *`, not changing global defaults. OpenSSH uses the first value found for many scalar options, so a top-level `Host *` block can prevent a later host-specific `ForwardAgent yes` or `IdentityAgent` from taking effect.
 4. Load the intended key into the existing user-session agent.
 5. Verify with connection sharing disabled so stale control masters cannot hide new settings.
 
@@ -52,6 +52,8 @@ Existing `ControlMaster` sockets can reuse old SSH settings. After changing conf
 ```bash
 ssh -A -o ControlMaster=no -o ControlPath=none ALIAS 'ssh-add -l'
 ```
+
+If the remote prints `The agent has no identities`, first run local `ssh-add -l` and load the intended key with `ssh-add ~/.ssh/KEY_FILE`. Agent forwarding can be enabled and still forward an empty agent.
 
 If a stale master must be closed, use:
 

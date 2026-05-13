@@ -8,7 +8,7 @@
 
 ## Pull Request Requirement
 
-If an Allwin skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update pull request is opened, or the exact blocker is reported.
+If an Allwin skill fails, is incomplete, is OS-incompatible, or misses reusable operational guidance, update the local skill files immediately when file edits are allowed. The task is not complete until the local skill update is synced and verified, and a skill-update pull request is opened or the exact blocker is reported.
 
 ## Sync First
 
@@ -20,9 +20,16 @@ When git is authorized:
 git pull --ff-only
 ```
 
-If local instructions say not to run git unless explicitly requested, do not run git. Report that update checks, pull requests, or branch creation are blocked until the user authorizes git operations.
+If local instructions say not to run git unless explicitly requested, do not run git unless a repo-local instruction grants a specific skill-maintenance exception. Still update and sync the local skill files when normal file edits are allowed. Report that update checks, pull requests, branch creation, commits, or pushes are blocked until the user authorizes git operations.
 
-After source changes, always sync affected skills locally:
+## Local Update Requirement
+
+When a reusable skill gap is discovered and file edits are allowed:
+
+1. Patch the most specific affected skill first.
+2. Patch this routing skill only when the gap is about routing, maintenance policy, cross-skill behavior, or missing skill selection guidance.
+3. Keep the update as small as possible and place operational detail in `references/*.md` unless it must be visible in `SKILL.md`.
+4. Sync affected skills locally:
 
 ```bash
 rsync -a --delete <repo>/<skill>/ ~/.codex/skills/<skill>/
@@ -30,6 +37,10 @@ diff -qr <repo>/<skill> ~/.codex/skills/<skill>
 ```
 
 Tell the user to restart Codex when new skill metadata or a new skill is added.
+
+Treat a failed local sync or `diff -qr` as a blocker until the source and installed skill copies match.
+
+## Git Publishing
 
 Use this workflow when repo access works:
 
