@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debian Rootless Docker Bootstrap"
+  short_description: "Harden Debian SSH and install rootless Docker"
+  default_prompt: "Use $debian-rootless-docker-bootstrap to prepare a Debian 13 server with admin-only SSH and rootless Docker."
