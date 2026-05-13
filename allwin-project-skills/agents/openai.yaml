@@ -1,0 +1,4 @@
+interface:
+  display_name: "Allwin Project Skills"
+  short_description: "Route Allwin skills and require update PRs"
+  default_prompt: "Use $allwin-project-skills for Allwin, Tony, Lifto, or LocalEnhance work and keep the skills updated by PR."

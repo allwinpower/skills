@@ -1,6 +1,6 @@
 ---
 name: debian-rootless-docker-bootstrap
-description: Prepare and harden a Debian 13 server over SSH with admin-only key login, root SSH disabled, SSH-agent-backed sudo without passwords, official Docker Engine packages, and Docker running rootless under admin. Use when Codex is asked to bootstrap a fresh Debian host, replace a temporary provider user such as debian, install rootless Docker/Compose from official sources, or produce/execute a safe remote setup plan for this server pattern.
+description: Prepare and harden a Debian 13 server over SSH with admin-only key login, root SSH disabled, SSH-agent-backed sudo without passwords, official Docker Engine packages, and Docker running rootless under admin. Use when Codex is asked to bootstrap a fresh Debian host, replace a temporary provider user such as debian, install rootless Docker/Compose from official sources, or produce/execute a safe remote setup plan for this server pattern, especially for Allwin, Tony, Lifto, or LocalEnhance infrastructure.
 ---
 
 # Debian Rootless Docker Bootstrap
@@ -12,6 +12,8 @@ Use this skill for Debian 13 `trixie` hosts that should end with exactly one SSH
 Before changing a host, read `references/operations.md`. Keep the current bootstrap SSH session open until `admin` login, sudo, and rootless Docker are verified from a second session.
 
 If local SSH config, host aliases, key loading, or agent forwarding need setup before the bootstrap, use `$local-ssh-setup`. Do not invent persistent local SSH aliases inside this skill.
+
+For Allwin, Tony, Lifto, or LocalEnhance work, also use `$allwin-project-skills`. If this skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update PR is opened or the exact PR blocker is reported.
 
 The script default-installs these admin SSH keys on every host:
 

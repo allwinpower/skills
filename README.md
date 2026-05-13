@@ -1,8 +1,22 @@
 # Allwin Codex Skills
 
-Reusable Codex skills maintained for Allwin projects.
+Reusable Codex skills maintained for Allwin, Tony, Lifto, and LocalEnhance projects.
+
+Canonical repo: <https://github.com/allwinpower/skills>
 
 ## Available Skills
+
+### Allwin Project Skills
+
+Path: `allwin-project-skills`
+
+Routes Allwin/Tony/Lifto/LocalEnhance work to the right installed skill and requires skill-update pull requests when a reusable gap is discovered.
+
+### Local SSH Setup
+
+Path: `local-ssh-setup`
+
+Configures and verifies local SSH aliases, identity files, SSH agent loading, agent forwarding, and multiplexing-safe checks.
 
 ### Debian Rootless Docker Bootstrap
 
@@ -22,29 +36,43 @@ Prepares a fresh Debian 13 server with:
 In Codex, ask:
 
 ```text
-Use $skill-installer to install from https://github.com/allwinpower/skills/tree/main/debian-rootless-docker-bootstrap
+Use $skill-installer to install from https://github.com/allwinpower/skills/tree/main/allwin-project-skills
 ```
 
-For an SSH-authenticated or private-repo install, ask Codex to use the installer with the repo and path:
+For an SSH-authenticated or private-repo install, ask Codex to use the installer with the repo and paths:
 
 ```text
-Use $skill-installer to install --repo allwinpower/skills --path debian-rootless-docker-bootstrap --method git
+Use $skill-installer to install --repo allwinpower/skills --path allwin-project-skills local-ssh-setup debian-rootless-docker-bootstrap --method git
 ```
 
 Restart Codex after installing new skills.
 
 ## Usage
 
-After install, ask Codex:
+For Allwin, Tony, Lifto, or LocalEnhance work, start with:
 
 ```text
-Use $debian-rootless-docker-bootstrap to prepare a Debian 13 server with admin-only SSH and rootless Docker.
+Use $allwin-project-skills for this task.
 ```
 
-The skill includes a guarded bootstrap script and an operations reference. It is designed for a two-phase flow: first create and verify `admin`, then remove the provider bootstrap user only after a separate `admin` SSH session is proven.
+Then use the specific skill it routes to, such as `$local-ssh-setup` or `$debian-rootless-docker-bootstrap`.
+
+## Skill Maintenance
+
+If a skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update pull request is opened, or the exact blocker is reported.
+
+When repo access works:
+
+1. Pull latest from `git@github.com:allwinpower/skills.git`.
+2. Create `skill-update/<short-topic>` from `main`.
+3. Commit the skill update.
+4. Push the branch to `origin`.
+5. Open a PR against `main`.
+
+Do not push directly to `main` unless explicitly requested.
 
 ## Notes
 
-- The bootstrap script is intended for Debian 13 `trixie`.
-- Keep provider console or rescue access available before removing the bootstrap user.
+- The Debian bootstrap script is intended for Debian 13 `trixie`.
+- Keep provider console or rescue access available before removing bootstrap users.
 - No license is granted unless one is added to this repository.

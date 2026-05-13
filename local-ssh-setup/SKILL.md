@@ -1,6 +1,6 @@
 ---
 name: local-ssh-setup
-description: Configure and verify local SSH client access for servers, including host aliases, IdentityFile, IdentityAgent, ForwardAgent, ssh-agent key loading, and multiplexing-safe verification. Use when Codex needs to adjust ~/.ssh/config, prepare SSH agent forwarding, or make local SSH login behavior reliable before remote server work.
+description: Configure and verify local SSH client access for servers, including host aliases, IdentityFile, IdentityAgent, ForwardAgent, ssh-agent key loading, and multiplexing-safe verification. Use when Codex needs to adjust ~/.ssh/config, prepare SSH agent forwarding, or make local SSH login behavior reliable before remote server work, especially for Allwin, Tony, Lifto, or LocalEnhance infrastructure.
 ---
 
 # Local SSH Setup
@@ -10,6 +10,8 @@ description: Configure and verify local SSH client access for servers, including
 Use this skill when local SSH behavior is part of the task: adding or reviewing host entries, choosing identities, loading keys into an agent, enabling forwarding, or verifying that a remote sudo model can see forwarded keys.
 
 Before editing `~/.ssh/config`, read `references/operations.md`. Inspect the current config with `ssh -G HOST` and confirm the intended alias with the user unless the alias was explicitly provided.
+
+For Allwin, Tony, Lifto, or LocalEnhance work, also use `$allwin-project-skills`. If this skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update PR is opened or the exact PR blocker is reported.
 
 ## Non-Negotiables
 
