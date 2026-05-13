@@ -13,6 +13,8 @@ If any verification fails, keep the bootstrap user in place and fix the failing 
 When checking a host after changing SSH config, use `$local-ssh-setup` for local client setup and bypass stale multiplexed connections:
 
 ```bash
+ssh-add -l
+ssh -G HOST | awk '/^(user|hostname|identityfile|identityagent|identitiesonly|forwardagent|addkeystoagent|controlmaster|controlpath) / {print}'
 ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'ssh-add -l'
 ```
 
@@ -47,8 +49,15 @@ sudo whoami
 On Debian 13 with `libpam-ssh-agent-auth`, non-interactive `sudo -n true` may fail with `sudo: a password is required` even though TTY sudo with a forwarded agent succeeds. Verify sudo with a TTY:
 
 ```bash
-ssh -A -tt admin@HOST 'sudo -k; sudo true; sudo whoami'
+ssh -A -tt -o ControlMaster=no -o ControlPath=none admin@HOST 'sudo -k; sudo true; sudo whoami'
 ```
+
+If sudo prompts for a password, do not assume the server sudo policy is broken first. Check these local-client causes in order:
+
+- `ssh-add -l` must show an authorized key; `The agent has no identities` means PAM has nothing to verify.
+- `ssh -G HOST` must resolve `forwardagent yes` and the intended identity. Because OpenSSH uses the first value found for many options, a top-level `Host *` block can prevent later host-specific values from taking effect; put host-specific blocks before `Host *`.
+- `ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'ssh-add -l'` must show the forwarded key on the server.
+- If config was changed, check and close stale multiplexed sessions with `ssh -O check HOST` and `ssh -O exit HOST` before testing plain `ssh HOST`.
 
 If the admin key is a FIDO2 `*-sk` key and `libpam-ssh-agent-auth` cannot verify it, switch to a PAM FIDO2/U2F sudo design instead of weakening sudo to shell-presence checks.
 
@@ -67,7 +76,7 @@ If the admin key is a FIDO2 `*-sk` key and `libpam-ssh-agent-auth` cannot verify
 - Keep the original bootstrap session open for recovery, then close it before deleting that user; `deluser --remove-home` fails while the user still owns live processes.
 - If sshd config validation fails, do not reload sshd.
 - If `admin` SSH fails after reload, fix `/etc/ssh/sshd_config.d/99-admin-only.conf` from the still-open bootstrap session.
-- If sudo fails for `admin`, verify local agent forwarding with `$local-ssh-setup`, then confirm `/etc/security/sudo_authorized_keys`, `/etc/pam.d/sudo`, and sudoers `env_keep` for `SSH_AUTH_SOCK`.
+- If sudo fails for `admin`, first verify the local agent has an authorized key and that forwarding is effective with `$local-ssh-setup`, then confirm `/etc/security/sudo_authorized_keys`, `/etc/pam.d/sudo`, and sudoers `env_keep` for `SSH_AUTH_SOCK`.
 - If rootless Docker fails, leave rootful Docker disabled only after a successful rootless `docker info` check.
 - Confirm rootful `docker.service`, `docker.socket`, and `containerd.service` are disabled and inactive after rootless verification.
 - If bootstrap cleanup is needed later, rerun the script with `REMOVE_BOOTSTRAP_USER=yes`; the main setup steps are idempotent.

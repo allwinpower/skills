@@ -60,6 +60,9 @@ Prefer `SUDO_AUTHORIZED_PUBKEY` only when the key used for sudo should differ fr
 Run the checks from a separate local terminal while keeping the original bootstrap session open:
 
 ```bash
+ssh-add -l
+ssh -G HOST | awk '/^(user|hostname|identityfile|identityagent|identitiesonly|forwardagent|addkeystoagent|controlmaster|controlpath) / {print}'
+ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'ssh-add -l'
 ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'whoami'
 ssh -A -o ControlMaster=no -o ControlPath=none -tt admin@HOST 'sudo -k; sudo true; sudo whoami'
 ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'docker info --format "{{json .SecurityOptions}}"'
@@ -70,6 +73,9 @@ ssh -o ControlMaster=no -o ControlPath=none BOOTSTRAP_USER@HOST 'true'
 
 Expected results:
 
+- The local agent contains the key that was installed for `admin` and sudo.
+- `ssh -G` resolves `forwardagent yes` and the intended identity for the host.
+- The remote `ssh-add -l` check shows the forwarded key; `The agent has no identities` means local setup is not ready.
 - `admin` login succeeds with key auth and a forwarded agent.
 - TTY sudo with a forwarded agent prints `root`.
 - Docker security options include rootless mode.

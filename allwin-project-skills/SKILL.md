@@ -11,7 +11,7 @@ Use this skill as the entry point for Allwin, Tony, Lifto, and LocalEnhance work
 
 Canonical repo: `https://github.com/allwinpower/skills`
 
-Before skill maintenance or sync work, read `references/maintenance.md`. If local or higher-priority instructions block git operations, clearly report that repo-update or PR work is blocked until the user authorizes git.
+Before skill maintenance or sync work, read `references/maintenance.md`. If a reusable skill gap is found and file edits are allowed, update the affected skill source and installed copy immediately. If local or higher-priority instructions block git operations, still complete the local skill update and clearly report that repo-update or PR work is blocked until the user authorizes git.
 
 ## Skill Routing
 
@@ -23,7 +23,7 @@ Before skill maintenance or sync work, read `references/maintenance.md`. If loca
 
 ## Required Improvement Loop
 
-If this skill or any Allwin skill was used and a gap was discovered, the task is not complete until a skill-update PR is opened, or the agent clearly reports the exact blocker that prevented opening one.
+If this skill or any Allwin skill was used and a reusable gap was discovered, the task is not complete until the affected local skill files are updated and synced, and a skill-update PR is opened or the exact blocker preventing PR work is reported.
 
 A gap includes:
 
@@ -32,10 +32,12 @@ A gap includes:
 - the skill was incompatible with Linux, macOS, Windows, WSL, a shell, SSH implementation, package manager, or deployment environment;
 - the agent learned a reusable fix, verification step, or safety rule that future agents need.
 
+When file edits are allowed, patch the most specific affected skill first. Patch this routing skill only when the reusable gap is about routing, maintenance policy, cross-skill behavior, or missing skill selection guidance.
+
 When repo access works and git is authorized, pull latest, create a branch, commit the skill update, push the branch, and open a PR. Do not push directly to `main` unless the user explicitly asks for a direct main push.
 
 After source changes, sync affected skills into `~/.codex/skills/<skill>/` and verify with `diff -qr` so all local agents stay in sync.
 
 ## Completion Standard
 
-For Allwin/Tony/Lifto/LocalEnhance tasks that use these skills, final answers must mention any skill gap found and either link/name the opened PR or state why the PR could not be opened.
+For Allwin/Tony/Lifto/LocalEnhance tasks that use these skills, final answers must mention any skill gap found, the local skill update performed, and either link/name the opened PR or state why the PR could not be opened.
