@@ -73,18 +73,6 @@ If the admin key is a FIDO2 `*-sk` key and `libpam-ssh-agent-auth` cannot verify
 - Confirm rootful `docker.service`, `docker.socket`, and `containerd.service` are disabled and inactive after rootless verification.
 - If bootstrap cleanup is needed later, rerun the script with `REMOVE_BOOTSTRAP_USER=yes`; the main setup steps are idempotent.
 
-## Local SSH Agent Notes
-
-Prefer the OS user-level SSH agent over shell-started duplicate agents. On systems with systemd user services, verify:
-
-```bash
-systemctl --user status ssh-agent.service
-ssh-add ~/.ssh/admin_key
-ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'ssh-add -l'
-```
-
-For per-host SSH config, set `ForwardAgent yes`, the intended `IdentityFile`, and an explicit `IdentityAgent` when the local agent socket is stable.
-
 ## Deploy Tool Compatibility
 
 For Docker Compose projects deployed by a wrapper that passes `docker compose --env-file`:

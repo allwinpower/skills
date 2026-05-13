@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local SSH Setup"
+  short_description: "Configure SSH aliases, keys, and agent forwarding"
+  default_prompt: "Use $local-ssh-setup to configure and verify local SSH access for this server."

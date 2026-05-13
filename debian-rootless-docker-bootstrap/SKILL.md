@@ -11,6 +11,8 @@ Use this skill for Debian 13 `trixie` hosts that should end with exactly one SSH
 
 Before changing a host, read `references/operations.md`. Keep the current bootstrap SSH session open until `admin` login, sudo, and rootless Docker are verified from a second session.
 
+If local SSH config, host aliases, key loading, or agent forwarding need setup before the bootstrap, use `$local-ssh-setup`. Do not invent persistent local SSH aliases inside this skill.
+
 The script default-installs these admin SSH keys on every host:
 
 ```text
