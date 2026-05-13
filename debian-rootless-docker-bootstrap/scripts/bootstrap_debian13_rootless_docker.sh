@@ -6,8 +6,11 @@ BOOTSTRAP_USER="${BOOTSTRAP_USER:-${SUDO_USER:-}}"
 REMOVE_BOOTSTRAP_USER="${REMOVE_BOOTSTRAP_USER:-no}"
 DELETE_BOOTSTRAP_HOME="${DELETE_BOOTSTRAP_HOME:-yes}"
 ALLOW_LOW_PORTS="${ALLOW_LOW_PORTS:-yes}"
+DEFAULT_ADMIN_SSH_PUBKEYS="${DEFAULT_ADMIN_SSH_PUBKEYS:-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOvNI10a8cqHLy+X3XbodaiMx8RMfXx/HDbcD03zrqT8
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFGf+oyDlpCQ+58vymJIWiXoOuW7hwqu4R7iOvLItfYX}"
 ADMIN_SSH_PUBKEY="${ADMIN_SSH_PUBKEY:-}"
-SUDO_AUTHORIZED_PUBKEY="${SUDO_AUTHORIZED_PUBKEY:-$ADMIN_SSH_PUBKEY}"
+ADMIN_EXTRA_SSH_PUBKEYS="${ADMIN_EXTRA_SSH_PUBKEYS:-}"
+SUDO_AUTHORIZED_PUBKEY="${SUDO_AUTHORIZED_PUBKEY:-}"
 
 log() {
   printf '[bootstrap] %s\n' "$*"
@@ -29,8 +32,28 @@ require_debian_13() {
 }
 
 require_inputs() {
-  [ -n "$ADMIN_SSH_PUBKEY" ] || fail "set ADMIN_SSH_PUBKEY to admin's SSH public key"
   [ "$ADMIN_USER" != "root" ] || fail "ADMIN_USER cannot be root"
+  [ -n "$(admin_authorized_keys)" ] || fail "set DEFAULT_ADMIN_SSH_PUBKEYS, ADMIN_SSH_PUBKEY, or ADMIN_EXTRA_SSH_PUBKEYS"
+}
+
+unique_key_lines() {
+  awk 'NF && $1 !~ /^#/ && !seen[$0]++'
+}
+
+admin_authorized_keys() {
+  {
+    printf '%s\n' "$DEFAULT_ADMIN_SSH_PUBKEYS"
+    printf '%s\n' "$ADMIN_SSH_PUBKEY"
+    printf '%s\n' "$ADMIN_EXTRA_SSH_PUBKEYS"
+  } | unique_key_lines
+}
+
+sudo_authorized_keys() {
+  if [ -n "$SUDO_AUTHORIZED_PUBKEY" ]; then
+    printf '%s\n' "$SUDO_AUTHORIZED_PUBKEY" | unique_key_lines
+  else
+    admin_authorized_keys
+  fi
 }
 
 apt_update_upgrade() {
@@ -66,7 +89,7 @@ create_admin_user() {
   local home
   home="$(getent passwd "$ADMIN_USER" | cut -d: -f6)"
   install -d -m 0700 -o "$ADMIN_USER" -g "$ADMIN_USER" "$home/.ssh"
-  printf '%s\n' "$ADMIN_SSH_PUBKEY" > "$home/.ssh/authorized_keys"
+  admin_authorized_keys > "$home/.ssh/authorized_keys"
   chown "$ADMIN_USER:$ADMIN_USER" "$home/.ssh/authorized_keys"
   chmod 0600 "$home/.ssh/authorized_keys"
 }
@@ -79,7 +102,7 @@ ensure_subids() {
 
 configure_sudo_ssh_agent() {
   log "configuring SSH-agent-backed sudo"
-  printf '%s\n' "$SUDO_AUTHORIZED_PUBKEY" > /etc/security/sudo_authorized_keys
+  sudo_authorized_keys > /etc/security/sudo_authorized_keys
   chown root:root /etc/security/sudo_authorized_keys
   chmod 0644 /etc/security/sudo_authorized_keys
 
@@ -117,14 +140,32 @@ install_rootless_docker() {
   log "installing rootless Docker for ${ADMIN_USER}"
   local admin_uid
   local admin_home
+  local docker_host
+  local user_bus
   admin_uid="$(id -u "$ADMIN_USER")"
   admin_home="$(getent passwd "$ADMIN_USER" | cut -d: -f6)"
+  docker_host="unix:///run/user/${admin_uid}/docker.sock"
+  user_bus="unix:path=/run/user/${admin_uid}/bus"
   loginctl enable-linger "$ADMIN_USER"
+  systemctl start "user@${admin_uid}.service" >/dev/null 2>&1 || true
+
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    [ -S "/run/user/${admin_uid}/bus" ] && break
+    sleep 1
+  done
 
   if [ ! -f "${admin_home}/.config/systemd/user/docker.service" ]; then
-    runuser -l "$ADMIN_USER" -c 'dockerd-rootless-setuptool.sh install'
+    runuser -u "$ADMIN_USER" -- env \
+      "XDG_RUNTIME_DIR=/run/user/${admin_uid}" \
+      "DBUS_SESSION_BUS_ADDRESS=${user_bus}" \
+      "PATH=/usr/bin:/sbin:/usr/sbin:/bin" \
+      dockerd-rootless-setuptool.sh install --force
   fi
-  runuser -u "$ADMIN_USER" -- env "XDG_RUNTIME_DIR=/run/user/${admin_uid}" systemctl --user enable --now docker
+  runuser -u "$ADMIN_USER" -- env \
+    "XDG_RUNTIME_DIR=/run/user/${admin_uid}" \
+    "DBUS_SESSION_BUS_ADDRESS=${user_bus}" \
+    systemctl --user enable --now docker
 
   if [ "$ALLOW_LOW_PORTS" = "yes" ]; then
     local rootlesskit
@@ -133,12 +174,25 @@ install_rootless_docker() {
     setcap cap_net_bind_service=ep "$rootlesskit"
   fi
 
-  runuser -u "$ADMIN_USER" -- env "XDG_RUNTIME_DIR=/run/user/${admin_uid}" "DOCKER_HOST=unix:///run/user/${admin_uid}/docker.sock" docker info >/dev/null
+  runuser -u "$ADMIN_USER" -- env \
+    "XDG_RUNTIME_DIR=/run/user/${admin_uid}" \
+    "DBUS_SESSION_BUS_ADDRESS=${user_bus}" \
+    "DOCKER_HOST=${docker_host}" \
+    docker info >/dev/null
+
+  runuser -u "$ADMIN_USER" -- env \
+    "XDG_RUNTIME_DIR=/run/user/${admin_uid}" \
+    "DBUS_SESSION_BUS_ADDRESS=${user_bus}" \
+    docker context update rootless --docker "host=${docker_host}" >/dev/null 2>&1 || true
+  runuser -u "$ADMIN_USER" -- env \
+    "XDG_RUNTIME_DIR=/run/user/${admin_uid}" \
+    "DBUS_SESSION_BUS_ADDRESS=${user_bus}" \
+    docker context use rootless >/dev/null 2>&1 || true
 
   mkdir -p "${admin_home}/.config/environment.d"
-  printf 'DOCKER_HOST=unix:///run/user/%s/docker.sock\n' "$admin_uid" > "${admin_home}/.config/environment.d/docker.conf"
+  printf 'DOCKER_HOST=%s\n' "$docker_host" > "${admin_home}/.config/environment.d/docker.conf"
   if ! grep -q 'DOCKER_HOST=unix:///run/user/' "${admin_home}/.profile" 2>/dev/null; then
-    printf '\nexport DOCKER_HOST=unix:///run/user/%s/docker.sock\n' "$admin_uid" >> "${admin_home}/.profile"
+    printf '\nexport DOCKER_HOST=%s\n' "$docker_host" >> "${admin_home}/.profile"
   fi
   chown -R "$ADMIN_USER:$ADMIN_USER" "${admin_home}/.config" "${admin_home}/.profile"
 }
@@ -156,6 +210,10 @@ verify_admin_local() {
   id "$ADMIN_USER" >/dev/null
   sshd -t
   runuser -u "$ADMIN_USER" -- env "XDG_RUNTIME_DIR=/run/user/${admin_uid}" "DOCKER_HOST=unix:///run/user/${admin_uid}/docker.sock" docker compose version >/dev/null
+  runuser -u "$ADMIN_USER" -- env "XDG_RUNTIME_DIR=/run/user/${admin_uid}" "DOCKER_HOST=unix:///run/user/${admin_uid}/docker.sock" docker info --format '{{json .SecurityOptions}}' | grep -q rootless
+  ! systemctl is-active --quiet docker.service
+  ! systemctl is-active --quiet docker.socket
+  ! systemctl is-active --quiet containerd.service
 }
 
 remove_bootstrap_user() {
@@ -196,7 +254,7 @@ main() {
   configure_sshd
   verify_admin_local
   remove_bootstrap_user
-  log "complete. Verify from your local machine with: ssh -A ${ADMIN_USER}@HOST 'sudo -k && sudo -n true && docker info'"
+  log "complete. Verify from your local machine with: ssh -A -tt ${ADMIN_USER}@HOST 'sudo -k; sudo true; sudo whoami' and ssh -A ${ADMIN_USER}@HOST 'docker info'"
 }
 
 main "$@"

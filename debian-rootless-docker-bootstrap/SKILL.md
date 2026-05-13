@@ -11,12 +11,20 @@ Use this skill for Debian 13 `trixie` hosts that should end with exactly one SSH
 
 Before changing a host, read `references/operations.md`. Keep the current bootstrap SSH session open until `admin` login, sudo, and rootless Docker are verified from a second session.
 
+The script default-installs these admin SSH keys on every host:
+
+```text
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOvNI10a8cqHLy+X3XbodaiMx8RMfXx/HDbcD03zrqT8
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFGf+oyDlpCQ+58vymJIWiXoOuW7hwqu4R7iOvLItfYX
+```
+
+Use `ADMIN_EXTRA_SSH_PUBKEYS` to add more admin login keys without replacing those defaults.
+
 ## Preferred Automation
 
 Use `scripts/bootstrap_debian13_rootless_docker.sh` on the remote host when the request allows execution. It is intentionally guarded and requires:
 
 ```bash
-ADMIN_SSH_PUBKEY='ssh-ed25519 ...' \
 sudo -E bash bootstrap_debian13_rootless_docker.sh
 ```
 
@@ -25,13 +33,14 @@ Optional environment variables:
 ```bash
 ADMIN_USER=admin
 BOOTSTRAP_USER=debian
-SUDO_AUTHORIZED_PUBKEY="$ADMIN_SSH_PUBKEY"
+ADMIN_EXTRA_SSH_PUBKEYS='ssh-ed25519 ...'
+SUDO_AUTHORIZED_PUBKEY='ssh-rsa ...'
 REMOVE_BOOTSTRAP_USER=no
 DELETE_BOOTSTRAP_HOME=yes
 ALLOW_LOW_PORTS=yes
 ```
 
-Prefer `SUDO_AUTHORIZED_PUBKEY` only when the key used for sudo should differ from the SSH login key.
+Prefer `SUDO_AUTHORIZED_PUBKEY` only when the key used for sudo should differ from the SSH login keys.
 
 ## Non-Negotiables
 
@@ -47,18 +56,18 @@ Prefer `SUDO_AUTHORIZED_PUBKEY` only when the key used for sudo should differ fr
 Run the checks from a separate local terminal while keeping the original bootstrap session open:
 
 ```bash
-ssh -A admin@HOST 'whoami'
-ssh -A admin@HOST 'sudo -k && sudo -n true && sudo whoami'
-ssh -A admin@HOST 'docker info --format "{{json .SecurityOptions}}"'
-ssh -A admin@HOST 'docker compose version'
-ssh root@HOST 'true'
-ssh BOOTSTRAP_USER@HOST 'true'
+ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'whoami'
+ssh -A -o ControlMaster=no -o ControlPath=none -tt admin@HOST 'sudo -k; sudo true; sudo whoami'
+ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'docker info --format "{{json .SecurityOptions}}"'
+ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'docker compose version'
+ssh -o ControlMaster=no -o ControlPath=none root@HOST 'true'
+ssh -o ControlMaster=no -o ControlPath=none BOOTSTRAP_USER@HOST 'true'
 ```
 
 Expected results:
 
 - `admin` login succeeds with key auth and a forwarded agent.
-- `sudo whoami` prints `root`.
+- TTY sudo with a forwarded agent prints `root`.
 - Docker security options include rootless mode.
 - Docker Compose prints a version.
 - Root SSH fails.
