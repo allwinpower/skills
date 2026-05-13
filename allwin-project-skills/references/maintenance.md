@@ -10,10 +10,30 @@
 
 If an Allwin skill fails, is incomplete, or is OS-incompatible, the task is not complete until a skill-update pull request is opened, or the exact blocker is reported.
 
-Use this workflow when repo access works:
+## Sync First
+
+Before using or modifying Allwin skills, check the canonical repo for updates and sync the local installed skill copy so every agent works from the same current guidance.
+
+When git is authorized:
 
 ```bash
 git pull --ff-only
+```
+
+If local instructions say not to run git unless explicitly requested, do not run git. Report that update checks, pull requests, or branch creation are blocked until the user authorizes git operations.
+
+After source changes, always sync affected skills locally:
+
+```bash
+rsync -a --delete <repo>/<skill>/ ~/.codex/skills/<skill>/
+diff -qr <repo>/<skill> ~/.codex/skills/<skill>
+```
+
+Tell the user to restart Codex when new skill metadata or a new skill is added.
+
+Use this workflow when repo access works:
+
+```bash
 git switch -c skill-update/<short-topic>
 # edit the affected skill files
 git status --short
@@ -56,11 +76,4 @@ Keep skills concise. Do not add extra changelogs or broad documentation files.
 
 ## Install Verification
 
-After source changes, sync the changed skill into the local Codex skill directory when available:
-
-```bash
-rsync -a --delete <repo>/<skill>/ ~/.codex/skills/<skill>/
-diff -qr <repo>/<skill> ~/.codex/skills/<skill>
-```
-
-Tell the user to restart Codex when new skill metadata or a new skill is added.
+Use the sync commands in "Sync First" after source changes. Treat a failed `diff -qr` as a blocker until the source and installed skill copies match.

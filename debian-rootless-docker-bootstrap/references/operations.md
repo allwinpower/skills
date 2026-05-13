@@ -4,13 +4,13 @@
 
 1. Connect with the provider bootstrap user that already has sudo, such as `debian`.
 2. Upload or paste `scripts/bootstrap_debian13_rootless_docker.sh` onto the remote host.
-3. Run it with default admin keys, or add more login keys with `ADMIN_EXTRA_SSH_PUBKEYS`. Use `ssh -A` for verification because sudo depends on the forwarded SSH agent.
+3. Run it with default admin keys, or add more login keys with `ADMIN_EXTRA_SSH_PUBKEYS`. If local key selection or agent forwarding is not already verified, use `$local-ssh-setup` before this step.
 4. Keep the bootstrap session open and verify `admin` from a second local terminal.
 5. Only after verification, rerun the script with `REMOVE_BOOTSTRAP_USER=yes BOOTSTRAP_USER=<initial-user>` to remove the bootstrap user and home directory.
 
 If any verification fails, keep the bootstrap user in place and fix the failing subsystem before deleting any account.
 
-When checking a host after changing SSH config, bypass stale multiplexed connections:
+When checking a host after changing SSH config, use `$local-ssh-setup` for local client setup and bypass stale multiplexed connections:
 
 ```bash
 ssh -A -o ControlMaster=no -o ControlPath=none admin@HOST 'ssh-add -l'
@@ -37,10 +37,9 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFGf+oyDlpCQ+58vymJIWiXoOuW7hwqu4R7iOvLItfYX
 
 The sudo policy is intentionally tied to cryptographic proof from the forwarded SSH agent, not to the existence of an SSH-looking shell. Environment variables such as `SSH_CONNECTION` are not sufficient authorization because they can be spoofed by a local process.
 
-The expected operator flow is:
+The expected operator flow, after local SSH setup is verified with `$local-ssh-setup`, is:
 
 ```bash
-ssh-add ~/.ssh/admin_key
 ssh -A admin@HOST
 sudo whoami
 ```
@@ -68,7 +67,7 @@ If the admin key is a FIDO2 `*-sk` key and `libpam-ssh-agent-auth` cannot verify
 - Keep the original bootstrap session open for recovery, then close it before deleting that user; `deluser --remove-home` fails while the user still owns live processes.
 - If sshd config validation fails, do not reload sshd.
 - If `admin` SSH fails after reload, fix `/etc/ssh/sshd_config.d/99-admin-only.conf` from the still-open bootstrap session.
-- If sudo fails for `admin`, confirm agent forwarding, `/etc/security/sudo_authorized_keys`, `/etc/pam.d/sudo`, and sudoers `env_keep` for `SSH_AUTH_SOCK`.
+- If sudo fails for `admin`, verify local agent forwarding with `$local-ssh-setup`, then confirm `/etc/security/sudo_authorized_keys`, `/etc/pam.d/sudo`, and sudoers `env_keep` for `SSH_AUTH_SOCK`.
 - If rootless Docker fails, leave rootful Docker disabled only after a successful rootless `docker info` check.
 - Confirm rootful `docker.service`, `docker.socket`, and `containerd.service` are disabled and inactive after rootless verification.
 - If bootstrap cleanup is needed later, rerun the script with `REMOVE_BOOTSTRAP_USER=yes`; the main setup steps are idempotent.

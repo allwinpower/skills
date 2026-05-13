@@ -1,0 +1,4 @@
+interface:
+  display_name: "Allwin Deploy Compose"
+  short_description: "Build Compose stacks for Allwin deploy"
+  default_prompt: "Use $allwin-deploy-compose to create a deploy-tool-ready Docker Compose stack."
